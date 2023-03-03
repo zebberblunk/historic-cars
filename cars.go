@@ -29,7 +29,7 @@ func main() {
 		} else if choice == "2" {
 			carlib.CarsSearch()
 		} else if choice == "3" {
-			carlib.DisplayCarWeightBar()
+			carlib.DisplayBars()
 		} else if choice == CHOICE_EXIT {
 			fmt.Printf("\nProgram shutdown. Good night :)\n\n")
 		} else {

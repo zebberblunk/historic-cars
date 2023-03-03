@@ -2,28 +2,21 @@ package carlib
 
 import (
 	"fmt"
-	"math/rand"
+	"io"
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 
 	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/components"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	"github.com/pkg/browser"
 )
 
-// generate random data for bar chart
-func generateBarItems(amount int) []opts.BarData {
-	items := make([]opts.BarData, 0)
-	for i := 0; i < amount; i++ {
-		items = append(items, opts.BarData{Value: rand.Intn(300)})
-	}
-	return items
-}
-
 // store all the car info into the map
-// (year is the key, all the weight values of that year are in array)
-func getWeightMapForCountry(country string) (carMap map[int][]float64) {
+// (year is the key, all the field values of that year are in array)
+func getValuesMapForCountry(country string, field string) (carMap map[int][]float64) {
 	carMap = make(map[int][]float64)
 	for _, car := range cars {
 		// country check
@@ -37,54 +30,75 @@ func getWeightMapForCountry(country string) (carMap map[int][]float64) {
 			f = []float64{}
 		}
 
-		f = append(f, car.weight)
+		f = append(f, car.GetValue(field))
 		carMap[car.year] = f
 	}
 
 	return
 }
 
-// go through the car map and calculate/store yearly averages into separate map
-func getAverageWeightMap(carMap map[int][]float64) (avgWeightMap map[int]float64) {
-	avgWeightMap = make(map[int]float64)
-	for year, weightArray := range carMap {
-		var totalWeight float64 = 0
-		for _, weight := range weightArray {
-			totalWeight += weight
+// go through the values map and calculate/store yearly averages into separate map
+func getMapOfAverages(valuesMap map[int][]float64) (mapOfAverages map[int]float64) {
+	mapOfAverages = make(map[int]float64)
+	for year, arrayOfValues := range valuesMap {
+		var total float64 = 0
+		for _, weight := range arrayOfValues {
+			total += weight
 		}
-		averageWeight := totalWeight / float64(len(weightArray))
-		avgWeightMap[year] = averageWeight
+		average := total / float64(len(arrayOfValues))
+		mapOfAverages[year] = average
 
-		fmt.Printf("Year %d, average weight %f\n", year, averageWeight)
+		// fmt.Printf("Year %d, average %f\n", year, average)
 	}
 
 	return
 }
 
 // form a sorted array of yearly average values so we can use it on the chart
-func getYearlyWeightAveragesForChart(years []string, averageWeightMap map[int]float64) (chartValues []opts.BarData) {
+func getMapOfAveragesForChart(years []string, mapOfAverages map[int]float64) (chartValues []opts.BarData) {
 	chartValues = make([]opts.BarData, len(years))
 
 	for i, year := range years {
 		y, _ := strconv.Atoi(year)
-		yearlyAverageWeight := averageWeightMap[y]
-		chartValues[i] = opts.BarData{Value: yearlyAverageWeight}
+		yearlyAverage := mapOfAverages[y]
+		chartValues[i] = opts.BarData{Value: yearlyAverage}
 
-		fmt.Printf("bar values | year %s, average : %f\n", year, yearlyAverageWeight)
+		// fmt.Printf("Bar values => year %s, average : %f\n", year, yearlyAverage)
 	}
 
 	return
 }
 
-func calculateYearlyWeightAverages(country string, years []string) (chartValues []opts.BarData) {
-	weightMap := getWeightMapForCountry(country)
-	averageWeightMap := getAverageWeightMap(weightMap)
-	chartValues = getYearlyWeightAveragesForChart(years, averageWeightMap)
+func calculateYearlyAverages(country string, years []string, field string) (chartValues []opts.BarData) {
+	valuesMap := getValuesMapForCountry(country, field)
+	averagesMap := getMapOfAverages(valuesMap)
+	chartValues = getMapOfAveragesForChart(years, averagesMap)
 
 	return
 }
 
-func DisplayCarWeightBar() {
+func createBar(years []string, field string) (bar *charts.Bar) {
+	title := fmt.Sprintf("Average car %s by year", strings.ToLower(field))
+
+	// create a new bar instance
+	bar = charts.NewBar()
+
+	// set some global options like Title/Legend/ToolTip or anything else
+	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
+		Title:    title,
+		Subtitle: "1970 - 1982",
+	}))
+
+	// put data into the bar chart
+	bar.SetXAxis(years).
+		AddSeries("USA", calculateYearlyAverages("USA", years, field)).
+		AddSeries("Japan", calculateYearlyAverages("Japan", years, field)).
+		AddSeries("Europe", calculateYearlyAverages("Europe", years, field))
+
+	return
+}
+
+func DisplayBars() {
 	initialize()
 
 	// create a map of all the "years" that the data covers (key: year)
@@ -97,7 +111,6 @@ func DisplayCarWeightBar() {
 		// if not, add it!
 		if !ok {
 			yearMap[carYear] = car.year
-			fmt.Printf("Year: %s\n", carYear)
 		}
 	}
 
@@ -110,31 +123,27 @@ func DisplayCarWeightBar() {
 	}
 	sort.Strings(years)
 
-	fmt.Printf("Years len %d; array %v\n", len(years), years)
+	// fmt.Printf("Years len %d; array %v\n", len(years), years)
 
-	chartWeightAveragesUSA := calculateYearlyWeightAverages("USA", years)
-	chartWeightAveragesJapan := calculateYearlyWeightAverages("Japan", years)
-	chartWeightAveragesEurope := calculateYearlyWeightAverages("Europe", years)
-
-	// create a new bar instance
-	bar := charts.NewBar()
-
-	// set some global options like Title/Legend/ToolTip or anything else
-	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
-		Title:    "Avereage car weights through the years (USA, Japan, Europe)",
-		Subtitle: "1970 - 1982",
-	}))
-
-	// put data into the bar chart
-	bar.SetXAxis(years).
-		AddSeries("USA", chartWeightAveragesUSA).
-		AddSeries("Japan", chartWeightAveragesJapan).
-		AddSeries("Europe", chartWeightAveragesEurope)
+	// create a new page and add the charts to it
+	page := components.NewPage()
+	page.AddCharts(
+		createBar(years, WEIGHT),
+		createBar(years, ACCELERATION),
+		createBar(years, MILEAGE),
+		createBar(years, HORSEPOWER),
+		createBar(years, PRICE),
+		createBar(years, CYLINDERS),
+		createBar(years, DISPLACEMENT),
+	)
 
 	// this is where the magic happens :)
-	f, _ := os.Create("data/bar.html")
-	bar.Render(f)
+	f, err := os.Create("temp/bars.html")
+	if err != nil {
+		panic(err)
+	}
+	page.Render(io.MultiWriter(f))
 
 	// open the default browser with the generated chart
-	browser.OpenFile("data/bar.html")
+	browser.OpenFile("temp/bars.html")
 }
