@@ -18,7 +18,7 @@ func main() {
 		fmt.Println(" 0 => quit!\n")
 		fmt.Println(" 1 => display full list of cars")
 		fmt.Println(" 2 => search cars")
-		fmt.Println(" 3 => display average car weights (1970 - 1982)")
+		fmt.Println(" 3 => display car statistics for US, European and Japanese cars (1970 - 1982)")
 		fmt.Println("")
 		fmt.Println("= = = = = = = = = = = = = = = = = = = = = = = = = =\n")
 		fmt.Print("Your choice => ")
