@@ -30,7 +30,14 @@ func getValuesMapForCountry(country string, field string) (carMap map[int][]floa
 			f = []float64{}
 		}
 
-		f = append(f, car.GetValue(field))
+		value := car.GetValue(field)
+
+		// if it is a 'displacement', convert the value from cubic inches to liters
+		if field == DISPLACEMENT {
+			value = value / 61
+		}
+
+		f = append(f, value)
 		carMap[car.year] = f
 	}
 
@@ -77,8 +84,12 @@ func calculateYearlyAverages(country string, years []string, field string) (char
 	return
 }
 
-func createBar(years []string, field string) (bar *charts.Bar) {
+func createBar(years []string, field string, titleExtension ...string) (bar *charts.Bar) {
 	title := fmt.Sprintf("Average car %s by year", strings.ToLower(field))
+
+	if len(titleExtension) > 0 {
+		title = fmt.Sprintf("%s | %s", title, titleExtension[0])
+	}
 
 	// create a new bar instance
 	bar = charts.NewBar()
@@ -86,7 +97,7 @@ func createBar(years []string, field string) (bar *charts.Bar) {
 	// set some global options like Title/Legend/ToolTip or anything else
 	bar.SetGlobalOptions(charts.WithTitleOpts(opts.Title{
 		Title:    title,
-		Subtitle: "1970 - 1982",
+		Subtitle: "1970 - 1982 (blue USA; green Japan; yellow Europe)",
 	}))
 
 	// put data into the bar chart
@@ -130,11 +141,11 @@ func DisplayBars() {
 	page.AddCharts(
 		createBar(years, WEIGHT),
 		createBar(years, ACCELERATION),
-		createBar(years, MILEAGE),
+		createBar(years, MILEAGE, "number of miles it can drive using one gallon of fuel"),
 		createBar(years, HORSEPOWER),
 		createBar(years, PRICE),
 		createBar(years, CYLINDERS),
-		createBar(years, DISPLACEMENT),
+		createBar(years, DISPLACEMENT, "engine displacement in liters"),
 	)
 
 	// this is where the magic happens :)
