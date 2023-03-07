@@ -1,3 +1,4 @@
+# Historic cars command line client 
 ---------------------------------------
 
   * [Intro](#intro)
@@ -12,7 +13,7 @@
 
 ## Intro
 
-from the [source](https://data.world/dataman-udit/cars-data)
+It is a command line client, implemented in Golang, enabling to process and extract statistics about car models produced in USA, Japan and Europe between 1978 and 1982, visualising some interesting trends. The origin of the data is [data.world](https://data.world/dataman-udit/cars-data) website.
 
 ## Requirements
 
@@ -20,13 +21,13 @@ Go 1.18 or higher
 
 ## Usage
 
-blah blah
+To run the command line client
 
 ```
 go run cars.go  
 ```
 
-etc etc
+It displays a menu and waits for your choice of action 
 
 ```
 = = = = = = = = = MAIN MENU = = = = = = = = = = = =
@@ -44,15 +45,19 @@ Your choice =>
 ```
 ### Option '1' : display full list of cars
 
-blah blah blah
+Prints out the entire database of car models. At the time of writing, ca 400 items.
 
 ### Option '2' : search cars
 
-blah blah blah
+You can search specific cars by name (e.g. Ford), model (e.g. Ranger) or country of origin (USA, Japan, Europe).
 
 ### Option '3' : display car statistics
 
-blah blah blah
+The option generates 7 different bar charts and opens them on your default browser. 
+
+p.s. if, for some reason, it does not open the browser, the generated file is located on "./temp/bar.html"
+
+A sample bar chart...
 
 ![Sample bar chart](/data/avg-cylinders.png "Sample bar chart")
 
