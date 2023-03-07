@@ -148,11 +148,23 @@ func DisplayBars() {
 		createBar(years, DISPLACEMENT, "engine displacement in liters"),
 	)
 
+	// check if the 'temp' directory exists
+	if _, err := os.Stat("temp"); os.IsNotExist(err) {
+		// create a directory 'temp' for the generated charts
+		err := os.Mkdir("temp", 0755)
+		if err != nil {
+			err = fmt.Errorf("unable to create the directory 'temp' => %w", err)
+			panic(err)
+		}
+	}
+
 	// this is where the magic happens :)
 	f, err := os.Create("temp/bars.html")
 	if err != nil {
+		err = fmt.Errorf("unable to generate bar chart file into 'temp/bars.html' => %w", err)
 		panic(err)
 	}
+
 	page.Render(io.MultiWriter(f))
 
 	// open the default browser with the generated chart
